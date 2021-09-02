@@ -1,35 +1,31 @@
-# ibBTC/wBTC Sushi Liquidity Pool Yield Strategy
+# WETH/SUSHI Sushi Liquidity Pool Yield Strategy
 
-## NOTE: TO TEST
-Import the fork network with tons of ETH
+## NOTE: Tests are not working on arbitrum-fork as of now
+Import the fork network
 ```
 brownie networks import network-config.yaml
 ```
 
-This Polygon network strategy takes Sushi's ibBTC/wBTC liquidity pool tokens as deposit and stakes it on Sushi's MiniChefV2 for yield. The rewards are in wMATIC and SUSHI. The wMATIC is swapped for wBTC and ibBTC in equal parts and these tokens are deposited on the liquidity pool to obtain more want. The SUSHI rewards are distributed to users through the BadgerTree. 
+This strategy takes Sushi's WETH/SUSHI liquidity pool tokens as deposit and stakes it on Sushi's MiniChefV2 for yield. The rewards are in SUSHI. Half of the SUSHI rewards are swapped for WETH and these tokens are deposited on the liquidity pool to obtain more want. 
 
 ## Deposit
-Deposit ibBTC/wBTC SLP tokens in Sushi's MiniChefV2, so that we earn interest as well as rewards in WMATIC and SUSHI.
+Deposit WETH/SUSHI SLP tokens in Sushi's MiniChefV2, so that we earn interest as well as rewards SUSHI.
 
 ## Tend
-If there's any ibBTC/wBTC SLP in the strategy, it will be deposited in the pool.
+If there's any WETH/SUSHI SLP in the strategy, it will be deposited in the pool.
 
 ## Harvest
-The Strategy will harvest WMATIC, swap it into wBTC and ibBTC in equal parts and deposit these tokens into the SLP to obtain more want. Additionally, the strategy will harvest SUSHI rewards that will be forward to users through the BadgerTree.
+The Strategy will harvest SUSHI rewards, and swap half of them into WETH. It will then deposit these tokens into the SLP to obtain more want.
 
 In further detail:
-- If no reward, then do nothing.
-- If SUSHI reward is available, process fees on it and transfer the balance to the BadgerTree.
-- If WMATIC reward is available, swap for WBTC and ibBTC in equal parts and use these tokens to provide liquidity to the SLP.
-- Finally, fees are processed on the want obtained.
+- If no SUSHI reward, then do nothing.
+- If reward is available, then swap half of it for WETH, and then use the WETH and SUSHI tokens to provide more liquidity to the SLP. Also, process fees on the extra want obtained.
 
+## Expected Yield as of September 2nd, 2021
 
-## Expected Yield as of July 31st, 2021
+- SUSHI:  18.06%
 
-- SUSHI:  3.70%
-- WMATIC: 6.10%
-
-- Total:  9.80%
+# Original README
 
 ## Installation and Setup
 
