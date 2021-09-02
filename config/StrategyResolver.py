@@ -79,18 +79,18 @@ class StrategyResolver(StrategyCoreResolver):
             "chef": strategy.CHEF(),
             "pool": strategy.want(),
             "router": strategy.SUSHISWAP_ROUTER(),
-            "badgerTree": strategy.badgerTree(),
+            # "badgerTree": strategy.badgerTree(),
         }   
 
     def add_balances_snap(self, calls, entities):
         super().add_balances_snap(calls, entities)
         strategy = self.manager.strategy
 
-        wbtc = interface.IERC20(strategy.WBTC_TOKEN())
+        # wbtc = interface.IERC20(strategy.WBTC_TOKEN())
         weth = interface.IERC20(strategy.WETH_TOKEN())
         sushi = interface.IERC20(strategy.reward())
 
-        calls = self.add_entity_balances_for_tokens(calls, "wbtc", wbtc, entities)
+        # calls = self.add_entity_balances_for_tokens(calls, "wbtc", wbtc, entities)
         calls = self.add_entity_balances_for_tokens(calls, "weth", weth, entities)
         calls = self.add_entity_balances_for_tokens(calls, "sushi", sushi, entities)
 
@@ -127,14 +127,14 @@ class StrategyResolver(StrategyCoreResolver):
             self.printState(event, keys)
 
             # If sushi is harvested, it is distributed to the tree
-            assert after.balances("sushi", "badgerTree") > before.balances(
-                "sushi", "badgerTree"
-            )
+            # assert after.balances("sushi", "badgerTree") > before.balances(
+            #     "sushi", "badgerTree"
+            # )
             # All sushi harvested (after fees) is sent to the tree
-            assert (
-                after.balances("sushi", "badgerTree") - before.balances("sushi", "badgerTree") ==
-                event["amount"]
-            )
+            # assert (
+            #     after.balances("sushi", "badgerTree") - before.balances("sushi", "badgerTree") ==
+            #     event["amount"]
+            # )
             # Governance rewards fees are charged
             assert after.balances("sushi", "governanceRewards") > before.balances(
                 "sushi", "governanceRewards"

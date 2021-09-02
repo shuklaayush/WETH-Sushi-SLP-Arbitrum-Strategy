@@ -1,5 +1,5 @@
 from brownie import *
-from brownie import interface, accounts, Contract, StrategySushiBadgerWbtcWeth, Controller, SettV3
+from brownie import interface, accounts, Contract, StrategySushiWethSushi, Controller, SettV3
 import time
 from helpers.time import days
 
@@ -63,7 +63,7 @@ def deploy():
   # sett.setGuestList(guestList, {"from": governance})
 
   ## Start up Strategy
-  strategy = StrategySushiBadgerWbtcWeth.deploy({"from": deployer})
+  strategy = StrategySushiWethSushi.deploy({"from": deployer})
   strategy.initialize(
     BADGER_DEV_MULTISIG,
     strategist,
@@ -86,15 +86,15 @@ def deploy():
   controller.approveStrategy(WANT, strategy, {"from": governance})
   controller.setStrategy(WANT, strategy, {"from": deployer})
 
-  WBTC = strategy.WBTC_TOKEN()
   WETH = strategy.WETH_TOKEN()
-  wbtc = interface.IERC20(WBTC)
+  SUSHI = strategy.reward()
   weth = interface.IERC20(WETH)
+  sushi = interface.IERC20(SUSHI)
 
   ## Uniswap some tokens here
   router = interface.IUniswapRouterV2(strategy.SUSHISWAP_ROUTER())
   
-  wbtc.approve(router.address, 999999999999999999999999999999, {"from": deployer})
+  sushi.approve(router.address, 999999999999999999999999999999, {"from": deployer})
   weth.approve(router.address, 999999999999999999999999999999, {"from": deployer})
 
   deposit_amount = 50 * 10**18
@@ -102,23 +102,23 @@ def deploy():
   # Convert ETH -> WETH
   interface.IWETH(WETH).deposit({"value": deposit_amount, "from": deployer})
 
-  # Buy WBTC with path ETH -> WETH -> WBTC
+  # Buy SUSHI with path ETH -> WETH -> SUSHI
   router.swapExactETHForTokens(
       0,
-      [WETH, WBTC],
+      [WETH, SUSHI],
       deployer,
       9999999999999999,
       {"value": deposit_amount, "from": deployer}
   )
 
-  # Add WBTC-WETH liquidity
+  # Add WETH-SUSHI liquidity
   router.addLiquidity(
-    WBTC,
     WETH,
-    wbtc.balanceOf(deployer),
+    SUSHI,
     weth.balanceOf(deployer),
-    wbtc.balanceOf(deployer) * 0.005,
+    sushi.balanceOf(deployer),
     weth.balanceOf(deployer) * 0.005,
+    sushi.balanceOf(deployer) * 0.005,
     deployer,
     int(time.time()) + 1200, # Now + 20mins
     {"from": deployer}
