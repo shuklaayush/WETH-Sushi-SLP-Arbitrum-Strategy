@@ -17,7 +17,7 @@ import {IUniswapRouterV2} from "../interfaces/uniswap/IUniswapRouterV2.sol";
 
 import {BaseStrategy} from "../deps/BaseStrategy.sol";
 
-contract StrategySushiBadgerWbtcWeth is BaseStrategy {
+contract StrategySushiWethSushi is BaseStrategy {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address;
     using SafeMathUpgradeable for uint256;
@@ -32,8 +32,6 @@ contract StrategySushiBadgerWbtcWeth is BaseStrategy {
     // address public want // Inherited from BaseStrategy, the token the strategy wants, swaps into and tries to grow
     address public reward; // Token we farm and swap to want
 
-    address public constant WBTC_TOKEN =
-        0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
     address public constant WETH_TOKEN =
         0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
@@ -41,12 +39,9 @@ contract StrategySushiBadgerWbtcWeth is BaseStrategy {
     address public constant SUSHISWAP_ROUTER =
         0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506;
 
-    address public constant badgerTree =
-        0x2C798FaFd37C7DCdcAc2498e19432898Bc51376b;
-
     // slippage tolerance 0.5% (divide by MAX_BPS) - Changeable by Governance or Strategist
     uint256 public sl;
-    uint256 public constant pid = 3; // WBTC_WETH_LP pool ID
+    uint256 public constant pid = 2; // WETH_SUSHI_LP pool ID
     uint256 public constant MAX_BPS = 10000;
 
     function initialize(
@@ -83,10 +78,6 @@ contract StrategySushiBadgerWbtcWeth is BaseStrategy {
             SUSHISWAP_ROUTER,
             type(uint256).max
         );
-        IERC20Upgradeable(WBTC_TOKEN).safeApprove(
-            SUSHISWAP_ROUTER,
-            type(uint256).max
-        );
         IERC20Upgradeable(WETH_TOKEN).safeApprove(
             SUSHISWAP_ROUTER,
             type(uint256).max
@@ -97,7 +88,7 @@ contract StrategySushiBadgerWbtcWeth is BaseStrategy {
 
     // @dev Specify the name of the strategy
     function getName() external pure override returns (string memory) {
-        return "StrategySushiBadgerWbtcWeth";
+        return "StrategySushiWethSushi";
     }
 
     // @dev Specify the version of the Strategy, for upgrades
@@ -128,11 +119,10 @@ contract StrategySushiBadgerWbtcWeth is BaseStrategy {
         override
         returns (address[] memory)
     {
-        address[] memory protectedTokens = new address[](4);
+        address[] memory protectedTokens = new address[](3);
         protectedTokens[0] = want;
         protectedTokens[1] = reward;
-        protectedTokens[2] = WBTC_TOKEN;
-        protectedTokens[3] = WETH_TOKEN;
+        protectedTokens[2] = WETH_TOKEN;
         return protectedTokens;
     }
 
@@ -222,34 +212,12 @@ contract StrategySushiBadgerWbtcWeth is BaseStrategy {
             return 0;
         }
 
-        uint256 rewardsToTree = rewardsAmount.mul(5000).div(MAX_BPS);
-        uint256 rewardsToCompound = rewardsAmount.sub(rewardsToTree);
+        uint256 _half = rewardsAmount.mul(5000).div(MAX_BPS);
 
-        if (rewardsToTree > 0) {
-            // Process fees on Sushi Rewards
-            _processRewardsFees(rewardsToTree, reward);
-
-            // Transfer balance of Sushi to the Badger Tree
-            uint256 rewardsBalance = IERC20Upgradeable(reward)
-                .balanceOf(address(this))
-                .sub(rewardsToCompound);
-            IERC20Upgradeable(reward).safeTransfer(badgerTree, rewardsBalance);
-
-            emit TreeDistribution(
-                reward,
-                rewardsBalance,
-                block.number,
-                block.timestamp
-            );
-        }
-
-        uint256 _half = rewardsToCompound.mul(5000).div(MAX_BPS);
-
-        // Swap rewarded SUSHI for WBTC through WETH path
-        address[] memory path = new address[](3);
+        // Swap half rewarded SUSHI for WETH
+        address[] memory path = new address[](2);
         path[0] = reward;
         path[1] = WETH_TOKEN;
-        path[2] = WBTC_TOKEN;
         IUniswapRouterV2(SUSHISWAP_ROUTER).swapExactTokensForTokens(
             _half,
             0,
@@ -258,28 +226,16 @@ contract StrategySushiBadgerWbtcWeth is BaseStrategy {
             now
         );
 
-        // Swap rewarded SUSHI for WETH
-        path = new address[](2);
-        path[0] = reward;
-        path[1] = WETH_TOKEN;
-        IUniswapRouterV2(SUSHISWAP_ROUTER).swapExactTokensForTokens(
-            rewardsToCompound.sub(_half),
-            0,
-            path,
-            address(this),
-            now
-        );
-
-        // Add liquidity for WBTC-WETH pool
-        uint256 _wbtcIn = balanceOfToken(WBTC_TOKEN);
+        // Add liquidity for WETH-SUSHI pool
         uint256 _wethIn = balanceOfToken(WETH_TOKEN);
+        uint256 _sushiIn = balanceOfToken(reward);
         IUniswapRouterV2(SUSHISWAP_ROUTER).addLiquidity(
-            WBTC_TOKEN,
             WETH_TOKEN,
-            _wbtcIn,
+            reward,
             _wethIn,
-            _wbtcIn.mul(sl).div(MAX_BPS),
+            _sushiIn,
             _wethIn.mul(sl).div(MAX_BPS),
+            _sushiIn.mul(sl).div(MAX_BPS),
             address(this),
             now
         );
@@ -324,25 +280,6 @@ contract StrategySushiBadgerWbtcWeth is BaseStrategy {
         );
         strategistPerformanceFee = _processFee(
             want,
-            _amount,
-            performanceFeeStrategist,
-            strategist
-        );
-    }
-
-    /// @dev used to manage the governance and strategist fee on earned rewards, make sure to use it to get paid!
-    function _processRewardsFees(uint256 _amount, address token)
-        internal
-        returns (uint256 governanceRewardsFee, uint256 strategistRewardsFee)
-    {
-        governanceRewardsFee = _processFee(
-            token,
-            _amount,
-            performanceFeeGovernance,
-            IController(controller).rewards()
-        );
-        strategistRewardsFee = _processFee(
-            token,
             _amount,
             performanceFeeStrategist,
             strategist
