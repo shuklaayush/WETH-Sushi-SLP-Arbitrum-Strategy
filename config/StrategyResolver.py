@@ -4,31 +4,32 @@ from brownie import interface
 
 console = Console()
 
+
 class StrategyResolver(StrategyCoreResolver):
     def hook_after_confirm_withdraw(self, before, after, params):
         """
-            Specifies extra check for ordinary operation on withdrawal
-            Use this to verify that balances in the get_strategy_destinations are properly set
+        Specifies extra check for ordinary operation on withdrawal
+        Use this to verify that balances in the get_strategy_destinations are properly set
         """
         assert True
 
     def hook_after_confirm_deposit(self, before, after, params):
         """
-            Specifies extra check for ordinary operation on deposit
-            Use this to verify that balances in the get_strategy_destinations are properly set
+        Specifies extra check for ordinary operation on deposit
+        Use this to verify that balances in the get_strategy_destinations are properly set
         """
         assert True
 
     def hook_after_earn(self, before, after, params):
         """
-            Specifies extra check for ordinary operation on earn
-            Use this to verify that balances in the get_strategy_destinations are properly set
+        Specifies extra check for ordinary operation on earn
+        Use this to verify that balances in the get_strategy_destinations are properly set
         """
         assert True
 
     def confirm_harvest(self, before, after, tx):
         """
-            Verfies that the Harvest produced yield and fees
+        Verfies that the Harvest produced yield and fees
         """
         console.print("=== Compare Harvest ===")
         self.manager.printCompare(before, after)
@@ -50,7 +51,6 @@ class StrategyResolver(StrategyCoreResolver):
                 "want", "governanceRewards"
             )
 
-
     def confirm_tend(self, before, after, tx):
         """
         Tend Should;
@@ -67,7 +67,9 @@ class StrategyResolver(StrategyCoreResolver):
             assert after.get("strategy.balanceOfWant") == 0
 
             # Amount deposited in pool must have increased
-            assert after.get("strategy.balanceOfPool") > before.get("strategy.balanceOfPool")
+            assert after.get("strategy.balanceOfPool") > before.get(
+                "strategy.balanceOfPool"
+            )
 
     def get_strategy_destinations(self):
         """
@@ -80,7 +82,7 @@ class StrategyResolver(StrategyCoreResolver):
             "pool": strategy.want(),
             "router": strategy.SUSHISWAP_ROUTER(),
             # "badgerTree": strategy.badgerTree(),
-        }   
+        }
 
     def add_balances_snap(self, calls, entities):
         super().add_balances_snap(calls, entities)
@@ -102,7 +104,7 @@ class StrategyResolver(StrategyCoreResolver):
             if len(tx.events[key]) > 1:
                 event = tx.events[key][1]
             else:
-                event = tx.events[key][0] 
+                event = tx.events[key][0]
 
             keys = [
                 "harvested",

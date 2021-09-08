@@ -5,9 +5,15 @@ pragma solidity ^0.6.0;
 import "../../deps/@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 contract MockToken is ERC20Upgradeable {
-    function initialize(address[] memory holders, uint256[] memory balances) public initializer {
+    function initialize(address[] memory holders, uint256[] memory balances)
+        public
+        initializer
+    {
         __ERC20_init("Mock", "Mock");
-        require(holders.length == balances.length, "Constructor array size mismatch");
+        require(
+            holders.length == balances.length,
+            "Constructor array size mismatch"
+        );
         for (uint256 i = 0; i < holders.length; i++) {
             _mint(holders[i], balances[i]);
         }

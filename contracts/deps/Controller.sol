@@ -50,7 +50,13 @@ contract Controller is SettAccessControl {
 
     /// @notice The Sett for a given token or any of the permissioned roles can call earn() to deposit accumulated deposit funds from the Sett to the active Strategy
     function _onlyApprovedForWant(address want) internal view {
-        require(msg.sender == vaults[want] || msg.sender == keeper || msg.sender == strategist || msg.sender == governance, "!authorized");
+        require(
+            msg.sender == vaults[want] ||
+                msg.sender == keeper ||
+                msg.sender == strategist ||
+                msg.sender == governance,
+            "!authorized"
+        );
     }
 
     // ===== View Functions =====
@@ -67,7 +73,13 @@ contract Controller is SettAccessControl {
     ) public view returns (uint256 expected) {
         uint256 _balance = IERC20Upgradeable(_token).balanceOf(_strategy);
         address _want = IStrategy(_strategy).want();
-        (expected, ) = IOneSplitAudit(onesplit).getExpectedReturn(_token, _want, _balance, parts, 0);
+        (expected, ) = IOneSplitAudit(onesplit).getExpectedReturn(
+            _token,
+            _want,
+            _balance,
+            parts,
+            0
+        );
     }
 
     // ===== Permissioned Actions: Governance Only =====
@@ -154,7 +166,9 @@ contract Controller is SettAccessControl {
 
     /// @dev Transfer an amount of the specified token from the controller to the sender.
     /// @dev Token balance are never meant to exist in the controller, this is purely a safeguard.
-    function inCaseStrategyTokenGetStuck(address _strategy, address _token) public {
+    function inCaseStrategyTokenGetStuck(address _strategy, address _token)
+        public
+    {
         _onlyGovernanceOrStrategist();
         IStrategy(_strategy).withdrawOther(_token);
     }
